@@ -59,7 +59,6 @@ Details, diagrams and the SOLID mapping: [docs/04-architecture.md](docs/04-archi
 | [05 Data model](docs/05-data-model.md) | ER diagram, entity specifications, ID conventions, lifecycles, history, indexes |
 | [06 Synthetic data & evaluation](docs/06-synthetic-data-and-evaluation.md) | Generator design, anomaly injection, ground truth, metrics, reproducibility |
 | [07 Data dictionary](docs/07-data-dictionary.md) | Every field of all 22 tables — **generated from the models** |
-| [Migrations](backend/migrations/README.md) | Alembic commands |
 | [Progress](docs/PROGRESS.md) | Phase checklist |
 
 ## Project structure
@@ -144,7 +143,13 @@ cd C:\CandidateWorkspace\WorkforceIQ\backend
 .\.venv\Scripts\alembic.exe current                # should print: 0001 (head)
 ```
 
-More commands: [backend/migrations/README.md](backend/migrations/README.md).
+Other Alembic commands (from `backend/`): `alembic.exe check` (models match the database),
+`alembic.exe history`, `alembic.exe upgrade head --sql` (print SQL only), and
+`alembic.exe -x url=sqlite+pysqlite:///C:/temp/scratch.sqlite3 upgrade head` (other database).
+The connection URL is never stored in `alembic.ini`; `migrations/env.py` reads the `WFIQ_*`
+settings. New migration: change the models, run `alembic.exe revision --autogenerate -m "..."`,
+review the file, `upgrade head`, run the tests and regenerate the data dictionary
+(`python.exe -m app.db.data_dictionary`).
 
 ### 3b. Optional: PostgreSQL 17 instead of SQLite
 
@@ -185,6 +190,8 @@ Output in `data/generated/<mode>/`: `csv/`, `json/`, `sql/seed.sql` (input table
 `ground_truth/` (labels — kept apart, never loaded into the database), `derived/` (weekly
 capacity, role demand/supply balance, skill eligibility), `manifest.json` (source manifest:
 provenance, row counts, SHA-256), `validation_summary.json`, `reproducibility.json`.
+`data/db/` (SQLite database) and `data/generated/` are git-ignored and can be re-created
+exactly from the migrations, seed and configuration. All data is fully synthetic.
 
 ### 5. Run the API
 
