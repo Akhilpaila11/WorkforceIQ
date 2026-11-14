@@ -1,0 +1,59 @@
+# =============================================================================
+# Synthetic data generator - FULL mode
+# -----------------------------------------------------------------------------
+# Hackathon-scale dataset. Same rules and distributions as STARTER, larger volumes.
+# Design and meaning of every value: docs/06-synthetic-data-and-evaluation.md
+# =============================================================================
+
+[generator]
+mode = "full"
+seed = 20261022
+generator_version = "0.1.0"
+
+[calendar]
+planning_start_iso_year = 2026
+planning_start_iso_week = 1            # 2026-W01 starts Monday 2025-12-29
+horizon_weeks = 52                     # 12 months: 2026-W01 .. 2026-W52 (ends 2026-12-27)
+                                       # (2026 has 53 ISO weeks; W53 is outside the horizon)
+holdout_weeks = 13                     # forecast back-test weeks: 2026-W40 .. 2026-W52
+# as_of_date is DERIVED = Monday of the first holdout week = 2026-09-28.
+
+[volumes]
+employees = 5000
+skills = 300
+projects = 500
+roles = 24
+
+[supply]
+part_time_share = 0.12
+part_time_weekly_hours = [20.0, 24.0, 30.0, 32.0]
+skills_per_employee = [3, 10]
+proficiency_weights = [0.10, 0.20, 0.35, 0.25, 0.10]
+verification_max_age_days = 1095
+certification_skill_share = 0.20
+certification_validity_months = [12, 24, 36]
+pending_verification_share = 0.03
+annual_leave_days_per_year = 20
+sick_leave_episodes_per_year = 1.5
+
+[demand]
+demand_to_capacity_ratio = 0.90
+roles_per_project = [2, 8]
+target_mean_utilization = 0.78
+dedicated_allocation_share = 0.15
+bench_share = 0.10
+
+[actuals]
+project_realization_mean = 0.95
+project_realization_sd = 0.08
+weekly_noise_sd = 0.10
+scope_change_probability = 0.15
+scope_change_factor_range = [1.10, 1.30]
+cancellation_probability = 0.05
+unplanned_work_probability = 0.03
+
+[anomalies]
+allocation_exceeds_availability = 120
+expired_skill_treated_as_current = 200
+duplicate_demand = 60
+overlapping_allocation_conflict = 80

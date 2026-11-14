@@ -1,0 +1,60 @@
+# =============================================================================
+# Synthetic data generator - STARTER mode
+# -----------------------------------------------------------------------------
+# Small dataset for development, demos and fast tests.
+# Design and meaning of every value: docs/06-synthetic-data-and-evaluation.md
+# Phase 3 implements the generator; values may be tuned then (and documented).
+# =============================================================================
+
+[generator]
+mode = "starter"
+seed = 20261022
+generator_version = "0.1.0"
+
+[calendar]
+planning_start_iso_year = 2026
+planning_start_iso_week = 1            # 2026-W01 starts Monday 2025-12-29
+horizon_weeks = 13                     # ~3 months: 2026-W01 .. 2026-W13 (ends 2026-03-29)
+holdout_weeks = 4                      # forecast back-test weeks: 2026-W10 .. 2026-W13
+# as_of_date is DERIVED = Monday of the first holdout week = 2026-03-02.
+# The generator never reads the system clock.
+
+[volumes]
+employees = 100
+skills = 30
+projects = 10
+roles = 10
+
+[supply]
+part_time_share = 0.12
+part_time_weekly_hours = [20.0, 24.0, 30.0, 32.0]
+skills_per_employee = [3, 8]                       # inclusive range
+proficiency_weights = [0.10, 0.20, 0.35, 0.25, 0.10]   # levels 1..5
+verification_max_age_days = 1095                  # spread of last_verified_date before as_of
+certification_skill_share = 0.20
+certification_validity_months = [12, 24, 36]
+pending_verification_share = 0.03
+annual_leave_days_per_year = 20
+sick_leave_episodes_per_year = 1.5
+
+[demand]
+demand_to_capacity_ratio = 0.90        # total planned hours / total net capacity
+roles_per_project = [2, 5]
+target_mean_utilization = 0.78
+dedicated_allocation_share = 0.15
+bench_share = 0.10
+
+[actuals]
+project_realization_mean = 0.95
+project_realization_sd = 0.08
+weekly_noise_sd = 0.10
+scope_change_probability = 0.15
+scope_change_factor_range = [1.10, 1.30]
+cancellation_probability = 0.05
+unplanned_work_probability = 0.03
+
+[anomalies]                            # number of injection EVENTS per type
+allocation_exceeds_availability = 6
+expired_skill_treated_as_current = 8
+duplicate_demand = 5
+overlapping_allocation_conflict = 5

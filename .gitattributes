@@ -1,0 +1,11 @@
+# Normalise line endings so generated files and checksums are identical on
+# Windows, macOS and Linux (important for the reproducibility report).
+* text=auto eol=lf
+
+# PowerShell scripts keep Windows line endings.
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary

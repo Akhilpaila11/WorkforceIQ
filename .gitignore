@@ -1,0 +1,40 @@
+# --- Secrets / local config -------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Python ------------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# --- Node / frontend ---------------------------------------------------------
+node_modules/
+frontend/dist/
+*.local
+
+# --- Generated synthetic data (re-creatable from seed + config) --------------
+data/generated/*
+!data/generated/.gitkeep
+
+# --- Local SQLite databases (re-creatable with: alembic upgrade head) ---------
+data/db/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# --- OS / editors ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

@@ -1,0 +1,323 @@
+# =============================================================================
+# WorkforceIQ - business rule parameters
+# -----------------------------------------------------------------------------
+# * One table per rule ID. Statements, formulas and examples for every rule are
+#   in docs/03-business-rules.md. A unit test keeps both lists identical.
+# * Hours are the canonical unit everywhere (BR-CAP-001).
+# * Every analysis run stores rules_version and the SHA-256 of this file, so a
+#   recommendation can always be traced back to the exact parameters used.
+# * Changing a value here changes analysis output, never stored source data.
+# =============================================================================
+
+[meta]
+rules_version = "1.0.0"
+
+# =============================================================================
+# CAP - Capacity
+# =============================================================================
+[rules.BR-CAP-001]
+title = "Hours are the canonical capacity unit; FTE is derived from the standard week"
+standard_weekly_hours = 40.0
+hours_decimal_places = 2
+
+[rules.BR-CAP-002]
+title = "Planning calendar uses ISO-8601 weeks with Monday-Friday working days"
+working_weekdays = [1, 2, 3, 4, 5]     # ISO weekday numbers, 1 = Monday
+month_assignment = "ISO_THURSDAY"      # a week belongs to the month of its Thursday
+
+[rules.BR-CAP-003]
+title = "Gross capacity comes from the effective work schedule while employed"
+
+[rules.BR-CAP-004]
+title = "Work schedules allow part-time hours within a bounded range"
+min_weekly_hours = 8.0
+max_weekly_hours = 40.0                # = standard week; overtime contracts are out of scope
+
+[rules.BR-CAP-005]
+title = "Approved leave reduces capacity, capped at scheduled hours per day"
+counted_leave_statuses = ["APPROVED"]
+
+[rules.BR-CAP-006]
+title = "Scheduled training time reduces capacity"
+enabled = true
+counted_training_statuses = ["PLANNED", "IN_PROGRESS"]
+
+[rules.BR-CAP-007]
+title = "Net available hours = gross - leave - training, never negative"
+
+[rules.BR-CAP-008]
+title = "Allocated hours are prorated by working days and are not reduced by leave"
+counted_allocation_statuses = ["CONFIRMED", "COMPLETED"]
+
+[rules.BR-CAP-009]
+title = "Free hours and the capacity reconciliation identity"
+reconciliation_tolerance_hours = 0.01
+
+# =============================================================================
+# EMP - Employee
+# =============================================================================
+[rules.BR-EMP-001]
+title = "Employee lifecycle status must agree with hire and termination dates"
+
+[rules.BR-EMP-002]
+title = "An employee is active in a week if employed on at least one working day"
+
+# =============================================================================
+# PRJ - Project
+# =============================================================================
+[rules.BR-PRJ-001]
+title = "Project lifecycle transitions"
+
+[rules.BR-PRJ-002]
+title = "Project priority ranking used for deterministic processing order"
+priority_rank = { CRITICAL = 1, HIGH = 2, MEDIUM = 3, LOW = 4 }
+
+# =============================================================================
+# UTL - Utilization
+# =============================================================================
+[rules.BR-UTL-001]
+title = "Utilization = allocated hours / net available hours"
+
+[rules.BR-UTL-002]
+title = "Utilization risk bands"
+under_utilized_below = 0.50            # [0, 0.50)     -> UNDER_UTILIZED
+healthy_below = 0.85                   # [0.50, 0.85)  -> HEALTHY
+                                       # [0.85, 1.00]  -> HIGH ; > 1.00 -> OVERALLOCATED
+                                       # net = 0       -> UNAVAILABLE (or OVERALLOCATED if allocated > 0)
+
+[rules.BR-UTL-003]
+title = "Aggregate utilization is hours-weighted, not an average of ratios"
+
+[rules.BR-UTL-004]
+title = "Allocation exceeds availability (overallocation finding)"
+tolerance_hours = 0.01
+high_severity_excess_hours = 8.0
+
+[rules.BR-UTL-005]
+title = "Excess capacity (bench) after consecutive under-utilized weeks"
+min_consecutive_weeks = 2
+
+# =============================================================================
+# ALC - Allocation
+# =============================================================================
+[rules.BR-ALC-001]
+title = "Allocation field and date validity"
+max_hours_per_week = 60.0
+
+[rules.BR-ALC-002]
+title = "Allocation lifecycle transitions"
+
+[rules.BR-ALC-003]
+title = "Overlapping allocation conflict with an exclusive (DEDICATED) assignment"
+exclusive_allocation_types = ["DEDICATED"]
+
+[rules.BR-ALC-004]
+title = "Allocation-to-demand reconciliation per project, role and week"
+balanced_lower = 0.90
+balanced_upper = 1.10
+
+[rules.BR-ALC-005]
+title = "API write-path guard for new or changed allocations"
+reject_overallocation = true
+reject_conflict = true
+allow_override_with_reason = true
+
+# =============================================================================
+# SKL - Skills
+# =============================================================================
+[rules.BR-SKL-001]
+title = "Proficiency scale 1-5"
+min_level = 1
+max_level = 5
+labels = ["Awareness", "Beginner", "Practitioner", "Advanced", "Expert"]
+
+[rules.BR-SKL-002]
+title = "Effective skill status is derived from dates, not from the recorded flag"
+freshness_days = 730                   # older verification -> STALE
+
+[rules.BR-SKL-003]
+title = "Recorded skill status is informational and never drives eligibility"
+
+[rules.BR-SKL-004]
+title = "Expired skill recorded as current (finding)"
+
+[rules.BR-SKL-005]
+title = "Certification skills must carry an expiry date after verification"
+
+[rules.BR-SKL-006]
+title = "Eligibility of an employee for a demand line"
+evaluate_on = "WEEK_START"
+require_same_role_family = true
+default_min_proficiency = 3
+eligible_statuses = ["VALID"]
+
+[rules.BR-SKL-007]
+title = "Deterministic match score and candidate ordering"
+weight_exact_role = 50
+weight_per_level_above_min = 10
+weight_per_secondary_skill = 5
+
+[rules.BR-SKL-008]
+title = "Employee skill history is versioned (one current version per employee and skill)"
+
+# =============================================================================
+# DEM - Demand
+# =============================================================================
+[rules.BR-DEM-001]
+title = "Demand line structure: one PRIMARY skill, bounded hours"
+max_secondary_skills = 2
+
+[rules.BR-DEM-002]
+title = "Demand line lifecycle transitions"
+
+[rules.BR-DEM-003]
+title = "Which demand lines count towards analysis"
+counted_demand_statuses = ["SUBMITTED", "APPROVED"]
+counted_project_statuses = ["APPROVED", "ACTIVE"]
+
+[rules.BR-DEM-004]
+title = "Duplicate project demand detection and exclusion"
+duplicate_key = ["project_id", "week_start_date", "role_id", "primary_skill_id", "min_proficiency"]
+keep = "LOWEST_LINE_NO"
+exclude_duplicates_from_analysis = true
+
+[rules.BR-DEM-005]
+title = "Deterministic demand line numbering"
+max_lines_per_project_week = 99
+
+# =============================================================================
+# TRN - Training
+# =============================================================================
+[rules.BR-TRN-001]
+title = "Training lifecycle transitions"
+
+[rules.BR-TRN-002]
+title = "Completed training creates a new employee skill version"
+
+# =============================================================================
+# GAP - Coverage and skill gaps
+# =============================================================================
+[rules.BR-GAP-001]
+title = "Deterministic processing order of demand lines"
+
+[rules.BR-GAP-002]
+title = "Committed coverage from existing allocations of eligible employees"
+
+[rules.BR-GAP-003]
+title = "At-risk coverage from allocations of ineligible employees"
+
+[rules.BR-GAP-004]
+title = "Capacity ledger prevents double-counting an employee's hours"
+
+[rules.BR-GAP-005]
+title = "Gap hours and coverage ratio"
+
+[rules.BR-GAP-006]
+title = "Gap severity bands"
+low_min_coverage = 0.90
+medium_min_coverage = 0.75
+high_min_coverage = 0.50
+escalate_for_priorities = ["CRITICAL"]
+
+[rules.BR-GAP-007]
+title = "Gap aggregation by role, skill, project and period"
+
+[rules.BR-GAP-008]
+title = "Excess capacity remaining after recommendations"
+
+[rules.BR-GAP-009]
+title = "Demand basis for gap analysis (planned or forecast)"
+default_demand_basis = "PLANNED"       # PLANNED | FORECAST
+
+[rules.BR-GAP-010]
+title = "Default analysis window"
+default_window = "AS_OF_TO_HORIZON_END"
+
+# =============================================================================
+# REC - Recommendations
+# =============================================================================
+[rules.BR-REC-001]
+title = "Recommendation strategies run as ordered passes over all gaps"
+strategy_order = ["REALLOCATE", "TRAIN", "HIRE"]
+
+[rules.BR-REC-002]
+title = "Reallocate free capacity of eligible employees"
+min_hours_per_week = 4.0
+
+[rules.BR-REC-003]
+title = "Train near-eligible employees when lead time allows"
+recertify_lead_weeks = 2
+upskill_lead_weeks_per_level = 4
+max_levels_to_upskill = 1
+training_hours_per_week = 8.0
+max_trainings_per_employee_per_run = 1
+
+[rules.BR-REC-004]
+title = "Hire for sustained residual gaps"
+min_gap_weeks = 3
+min_avg_weekly_gap_hours = 20.0
+headcount_rounding_tolerance_fte = 0.2
+permanent_min_remaining_project_weeks = 26
+
+[rules.BR-REC-005]
+title = "Every recommendation is explainable and traceable"
+
+[rules.BR-REC-006]
+title = "Recommendation lifecycle transitions"
+
+# =============================================================================
+# FCT - Forecasting
+# =============================================================================
+[rules.BR-FCT-001]
+title = "Planned, forecast and actual demand are distinct, separately stored quantities"
+
+[rules.BR-FCT-002]
+title = "Forecast grain is project × role × ISO week, with deterministic roll-ups"
+
+[rules.BR-FCT-003]
+title = "Deterministic baseline forecasting methods"
+default_method = "PLAN_RATIO"
+available_methods = ["NAIVE_PLAN", "MOVING_AVERAGE", "PLAN_RATIO"]
+moving_average_window_weeks = 4
+plan_ratio_window_weeks = 4
+plan_ratio_min = 0.5
+plan_ratio_max = 1.5
+plan_ratio_min_planned_hours = 8.0
+
+[rules.BR-FCT-004]
+title = "No look-ahead: forecasts only read actuals before the forecast origin"
+
+[rules.BR-FCT-005]
+title = "Forecast accuracy metrics on held-out actuals"
+metrics = ["MAE", "WAPE", "BIAS"]
+evaluation_levels = ["PROJECT_ROLE_WEEK", "ROLE_WEEK"]
+
+# =============================================================================
+# VAL - Data validation checks
+# =============================================================================
+[rules.BR-VAL-001]
+title = "Primary keys are unique and match their ID pattern"
+
+[rules.BR-VAL-002]
+title = "Every foreign key resolves to an existing record"
+
+[rules.BR-VAL-003]
+title = "Every enum column holds an allowed value"
+
+[rules.BR-VAL-004]
+title = "Date ranges are ordered (start <= end) and inside their parent ranges"
+
+[rules.BR-VAL-005]
+title = "Capacity reconciliation identity holds for every employee-week"
+
+[rules.BR-VAL-006]
+title = "Recorded lifecycle histories only use allowed transitions"
+
+[rules.BR-VAL-007]
+title = "IDs are deterministic and immutable"
+
+[rules.BR-VAL-008]
+title = "Every recommendation references existing rules, gaps and source records"
+
+[rules.BR-VAL-009]
+title = "Work schedules do not overlap and cover every employed day"
