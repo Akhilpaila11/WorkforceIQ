@@ -187,6 +187,12 @@ function url(path: string, query: Query = {}): string {
 
 export async function api<T>(path: string, query: Query = {}, init?: RequestInit): Promise<T> {
   const res = await fetch(url(path, query), init);
+  if (!(res.headers.get("content-type") ?? "").includes("application/json")) {
+    // e.g. the Vite dev server answering with index.html because the /api proxy is not active
+    throw new Error(
+      `${res.status} ${res.statusText}: the API at ${BASE} did not return JSON - check that the backend is running and restart "npm run dev" in frontend/`,
+    );
+  }
   if (!res.ok) {
     let message = `${res.status} ${res.statusText}`;
     try {
