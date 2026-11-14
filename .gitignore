@@ -38,3 +38,5 @@ data/db/
 Thumbs.db
 .idea/
 *.swp
+
+frontend/.vite/
