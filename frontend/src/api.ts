@@ -63,7 +63,11 @@ export interface Metrics {
     at_risk_hours: number;
     coverage_ratio: number | null;
     rows_with_gap: number;
+    reallocated_hours: number;
+    trained_hours: number;
+    hire_hours: number;
     unresolved_hours: number;
+    by_severity: Record<string, number>;
   };
   findings: Record<string, Record<string, number>>;
   recommendations: {
@@ -82,9 +86,22 @@ export interface Metrics {
     available: boolean;
     reason?: string;
     per_type?: Record<string, { tp: number; fp: number; fn: number; precision: number | null; recall: number | null; f1: number | null }>;
+    micro?: { tp: number; fp: number; fn: number; precision: number | null; recall: number | null; f1: number | null };
   };
   risk_bands: Record<string, number>;
   top_gaps: GapGroup[];
+  weekly: WeekPoint[];
+}
+
+export interface WeekPoint {
+  week_start_date: string;
+  demand_hours: number;
+  forecast_hours: number;
+  committed_hours: number;
+  gap_hours: number;
+  net_hours: number;
+  allocated_hours: number;
+  utilization: number | null;
 }
 
 export interface DataSummary {
